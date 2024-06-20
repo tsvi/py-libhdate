@@ -17,7 +17,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        token: ${{ secrets.PAT_TOKEN }}
+        branch: 
 
     - name: Get version
       run: |
@@ -35,10 +35,32 @@ jobs:
     - name: Commit changes
       uses: stefanzweifel/git-auto-commit-action@v5
       with:
-        branch: main
+        branch: release-${{ github.event.release.tag_name }}
         commit_user_name: HDate Release Bot
         commit_user_email: hdate+github-actions[bot]@users.noreply.github.com
         commit_message: Release ${{ github.event.release.tag_name }}
+        create_branch: true
+
+    - name: Create Pull Request
+      id: create-pr
+      uses: peter-evans/create-pull-request@v6
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        branch: release-${{ github.event.release.tag_name }}
+        title: Release ${{ github.event.release.tag_name }}
+        body: |
+          Changelog: ${{ github.event.release.body }}
+          - Auto generated from [release.yaml](https://github.com/py-libhdate/py-libhdate/tree/main/.github/workflows/release.yaml)
+        base: main
+        auto-merge: true
+        delete-branch: true
+
+    - name: Enable Pull Request Automerge
+      uses: peter-evans/enable-pull-request-automerge@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        pull-request-number: ${{ steps.create-pr.outputs.pull-request-number }}
+        merge-method: squash
 
     - name: Set up PDM
       uses: pdm-project/setup-pdm@v4
