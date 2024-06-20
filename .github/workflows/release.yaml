@@ -50,8 +50,6 @@ jobs:
           Changelog: ${{ github.event.release.body }}
           - Auto generated from [release.yaml](https://github.com/py-libhdate/py-libhdate/tree/main/.github/workflows/release.yaml)
         base: main
-        auto-merge: true
-        delete-branch: true
 
     - name: Enable Pull Request Automerge
       uses: peter-evans/enable-pull-request-automerge@v3
