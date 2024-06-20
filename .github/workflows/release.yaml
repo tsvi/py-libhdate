@@ -33,8 +33,9 @@ jobs:
     - name: Commit changes
       uses: stefanzweifel/git-auto-commit-action@v5
       with:
-        author_name: ${{ github.actor }}
-        author_email: ${{ github.event.release.author.email }}
+        branch: main
+        commit_user_name: HDate Release Bot
+        commit_user_email: hdate+github-actions[bot]@users.noreply.github.com
         commit_message: Release ${{ github.event.release.tag_name }}
 
     - name: Set up PDM
