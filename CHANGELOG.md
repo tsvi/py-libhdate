@@ -1,26 +1,20 @@
-Changelog
-=========
+# Changelog
 
-v0.10.9 (2024-6-18)
--------------------
+## v0.10.9 (2024-6-18)
 
 - Allow locations to the north of 50 degrees latitude (#124) @tsvi
 - Use PDM as our package manager (#123) @tsvi
 - add Is leap year method (#120) @aviadlevy
 
-
-v0.10.8 (2024-3-11)
--------------------
+## v0.10.8 (2024-3-11)
 
 - Revert minimal astral version to 2.2
 
-v0.10.7 (2024-3-9)
-------------------
+## v0.10.7 (2024-3-9)
 
 - Fix publishing part of workflow
 
-v0.10.6 (2024-1-30)
--------------------
+## v0.10.6 (2024-1-30)
 
 - Update Github actions
 - Fix dependabots issues
@@ -41,30 +35,27 @@ v0.10.6 (2024-1-30)
 - Remove linting from tox (part of pre-commit)
 - Update requirements to python 3.7
 
-v0.10.2 (2020-12-27)
---------------------
+## v0.10.2 (2020-12-27)
 
 - Use environment files instead of set-env
 - Fix version in pyproject.toml and fix github release flow (#84)
 - Move to poetry (#83)
 
-v0.10.0 (2020-11-2)
--------------------
+## v0.10.0 (2020-11-2)
 
 - Use astral in Zmanim time calculations (#79)
 - Setup read the docs configuration (#81)
 - Initial commit for working with Sphinx for documentation (#80)
 
-v0.9.12 (2020-10-26)
---------------------
+## v0.9.12 (2020-10-26)
 
 - issur_melacha should include candle_lighting (#78)
 - Add Python 3.9 to CI (#77)
 - Update README.rst and Fixes some typos (#75)
 - Fix instructions for setting up development environment (#73)
 
-v0.9.11 (2020-7-22)
--------------------
+## v0.9.11 (2020-7-22)
+
 - Terminate sed command
 - Fix missing closing quote (#70)
 - Fix sed search and replace for version number (#69)
@@ -89,21 +80,19 @@ v0.9.11 (2020-7-22)
 - chore(devops): Implement pre-commit
 - chore(devops): Move to use semantic release instead of bumpversion
 
-v0.9.7 (2020-02-23)
--------------------
+## v0.9.7 (2020-02-23)
+
 - Use Travis repo environment variable. [Tsvi Mostovicz]
 - Fix deployment, temporarily remove on.tags. [Tsvi Mostovicz]
 
+## v0.9.6 (2020-02-23)
 
-v0.9.6 (2020-02-23)
--------------------
 - Add automatic deployment. [Tsvi Mostovicz]
 
-
-v0.9.5 (2020-01-22)
--------------------
+## v0.9.5 (2020-01-22)
 
 Fix
+
 ~~~
 - Small lint fixes and pass tests on python2.7. [Tsvi Mostovicz]
 
@@ -718,3 +707,5 @@ v0.6.2 (2018-09-06)
 - Add sun times. [Royi Reshef]
 - Add julian. [Royi Reshef]
 - First commit. [Royi Reshef]
+
+~~~
