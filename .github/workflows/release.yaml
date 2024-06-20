@@ -1,13 +1,17 @@
 name: Release
 
 on:
-  release:
-    types: [published]
+  workflow_call:
 
 jobs:
   publish-release:
 
     runs-on: ubuntu-latest
+
+    permissions:
+      # Give the default GITHUB_TOKEN write permission to commit and push the
+      # added or changed files to the repository.
+      contents: write
 
     steps:
     - uses: actions/checkout@v4
@@ -18,21 +22,18 @@ jobs:
     - name: Bump version
       run: |
         sed 's/^version = ".*"/version = "'"$VERSION"'"/' -i pyproject.toml
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add pyproject.toml
-        git commit -m "releasing v$VERSION"
-        git tag -f "v$VERSION"
-    - name: Push changes
-      uses: ad-m/github-push-action@master
+
+    - name: Update Changelog
+      uses: stefanzweifel/changelog-updater-action@v1
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-    - name: Push tags
-      uses: ad-m/github-push-action@master
+        latest-version: ${{ github.event.release.tag_name }}
+        release-notes: ${{ github.event.release.body }}
+
+    - name: Commit changes
+      uses: stefanzweifel/git-auto-commit-action@v5
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        tags: true
-        force: true
+        commit_message: Release ${{ github.event.release.tag_name }}
+        tagging_message: ${{ github.event.release.tag_name }}
 
     - name: Set up PDM
       uses: pdm-project/setup-pdm@v4
