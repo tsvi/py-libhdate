@@ -104,7 +104,6 @@
 - Make suggested improvements. [Moshe Kaplan]
 - Add daf yomi to a date. [Moshe Kaplan]
 
-
 ## v0.9.3 (2019-10-31)
 
 - Lower verbosity of holiday calculations. [Tsvi Mostovicz]
@@ -130,7 +129,6 @@
 - Add tests for parshiot around rosh hashana. [Tsvi Mostovicz]
 - Fix for Parshat shavua on last weeks of year. [Tsvi Mostovicz]
 
-
 ## v0.9.0 (2019-08-06)
 
 - Accept timezone aware datetime as an argument to Zmanim. [Tsvi
@@ -151,7 +149,6 @@
 - Merge pull request #43 from tsvi/master. [Tsvi Mostovicz]
 
   Bump version: 0.8.7 → 0.8.8
-
 
 ## v0.8.8 (2019-07-02)
 
@@ -174,7 +171,6 @@
    - #home-assistant/24479
    - #home-assistant/23852
 
-
 ## v0.8.7 (2018-12-18)
 
 - Split tests so they're a bit more readable, to help us fix #36. [Tsvi
@@ -182,7 +178,6 @@
 - Family day has only existed as a national holiday since 1974. [Tsvi
   Mostovicz]
 - Cleanup whitespace errors. [Tsvi Mostovicz]
-
 
 ## v0.8.6 (2018-12-18)
 
@@ -198,7 +193,6 @@
 - Lint fixes. [Ari Gilder]
 - Add additional properties for YT and Shabbat candles/havdalah and
   first/last days. [Ari Gilder]
-
 
 ## v0.8.5 (2018-12-13)
 
@@ -258,7 +252,6 @@
 - Add enums for Months and other cleanup. [Ari Gilder]
 - Give the sources for the Zmanim calculations in the docstrings. [Tsvi
   Mostovicz]
-
 
 ## v0.8.2 (2018-11-25)
 
@@ -320,7 +313,6 @@
 - Improve test coverage for edge cases. [Tsvi Mostovicz]
 - Add test for repr implementation and fix implementation. [Tsvi
   Mostovicz]
-
 
 ## v0.8.0 (2018-11-12)
 
@@ -427,12 +419,10 @@
 
   Reorg of files in preparation for simplification of API
 
-
 ## v0.6.5 (2018-10-16)
 
 - Add tests for timezone usage in hdate. [Tsvi Mostovicz]
 - Bring back lost fix for missing parasha. [Tsvi Mostovicz]
-
 
 ## v0.6.3 (2018-10-16)
 
@@ -443,7 +433,6 @@
 - Add documentation for development and allow for easy installation of
   publishing tools. [Tsvi Mostovicz]
 
-
 ## v0.6.2 (2018-09-06)
 
 - Use bumpversion for updating version numbers. [Tsvi Mostovicz]
@@ -453,7 +442,6 @@
 - Change isort not to require single line imports. [Tsvi Mostovicz]
 - Remove irrelevant gitignores. [Tsvi Mostovicz]
 - Reorganize files in a more logical fashion. [Tsvi Mostovicz]
-
 
 ## 0.6 (2017-12-19)
 
@@ -509,13 +497,11 @@
 - Use ZMANIM_TUPLE instead of lists and dicts. [Tsvi Mostovicz]
 - Add tests to pylint checks. [Tsvi Mostovicz]
 
-
 ## 0.5 (2017-09-12)
 
 - Create 0.5 version for critical bugfix in Zmanim. [Tsvi Mostovicz]
 - Bugfix for Zmanim due to move to python 3. [Tsvi Mostovicz]
 - Add setup.cfg for creation of universal wheel. [Tsvi Mostovicz]
-
 
 ## 0.4 (2017-09-11)
 
@@ -534,7 +520,6 @@
 - Create python 3 branch after auto-translating with future. [Tsvi
   Mostovicz]
 - Add python3 to list of environments. [Tsvi Mostovicz]
-
 
 ## 0.3 (2017-09-10)
 
