@@ -20,6 +20,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        ssh-key: ${{ secrets.RELEASE_KEY }}
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -32,7 +34,7 @@ jobs:
     - name: Fetch Draft Release Notes
       id: fetch_release_notes
       env:
-        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         DRAFT_RELEASE=$(gh api repos/${{ github.repository }}/releases -q '[.[] | select(.draft==true)] | first')
         DRAFT_NOTES=$(echo $DRAFT_RELEASE | jq -r '.body')
@@ -51,7 +53,7 @@ jobs:
 
     - name: Create GitHub Release
       env:
-        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         TAG_NAME=$(bump-my-version show current_version)
         gh release create v$TAG_NAME --title "Release v$TAG_NAME" --notes "${{ steps.fetch_release_notes.outputs.notes }}"
