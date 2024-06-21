@@ -1,12 +1,16 @@
 name: Release
 
 on:
-  release:
-    types: [released]
+  workflow_dispatch:
+    inputs:
+      version_bump:
+        description: 'Version part to bump (major, minor, patch)'
+        required: true
+        default: 'patch'
 
 jobs:
   publish-release:
-
+    if: contains(github.repository_owner.permissions.admins, github.event.sender.login)
     runs-on: ubuntu-latest
 
     permissions:
@@ -17,12 +21,24 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Get version
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: pip install bump-my-version
+
+    - name: Fetch Draft Release Notes
+      id: fetch_release_notes
+      env:
+        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
       run: |
-        echo "VERSION=$(/usr/bin/git tag --list | sed 's|.*v\([0-9\.]*\).*|\1|')" >> $GITHUB_ENV
-    - name: Bump version
-      run: |
-        sed 's/^version = ".*"/version = "'"$VERSION"'"/' -i pyproject.toml
+        DRAFT_RELEASE=$(gh api repos/${{ github.repository }}/releases -q '[.[] | select(.draft==true)] | first')
+        DRAFT_NOTES=$(echo $DRAFT_RELEASE | jq -r '.body')
+        DRAFT_ID=$(echo $DRAFT_RELEASE | jq -r '.id')
+        echo "::set-output name=notes::$DRAFT_NOTES"
+        gh api repos/${{ github.repository }}/releases/$DRAFT_ID -X DELETE
 
     - name: Update Changelog
       uses: stefanzweifel/changelog-updater-action@v1
@@ -30,24 +46,15 @@ jobs:
         latest-version: ${{ github.event.release.tag_name }}
         release-notes: ${{ github.event.release.body }}
 
-    - name: Create Pull Request
-      id: create-pr
-      uses: peter-evans/create-pull-request@v6
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        branch: release-${{ github.event.release.tag_name }}
-        title: Release ${{ github.event.release.tag_name }}
-        body: |
-          Changelog: ${{ github.event.release.body }}
-          - Auto generated from [release.yaml](https://github.com/py-libhdate/py-libhdate/tree/main/.github/workflows/release.yaml)
-        base: main
+    - name: Bump version
+      run: bump-my-version bump ${{ github.event.inputs.version_bump }} -v
 
-    - name: Enable Pull Request Automerge
-      uses: peter-evans/enable-pull-request-automerge@v3
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        pull-request-number: ${{ steps.create-pr.outputs.pull-request-number }}
-        merge-method: squash
+    - name: Create GitHub Release
+      env:
+        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+      run: |
+        TAG_NAME=$(bump-my-version show current_version)
+        gh release create v$TAG_NAME --title "Release v$TAG_NAME" --notes "${{ steps.fetch_release_notes.outputs.notes }}"
 
     - name: Set up PDM
       uses: pdm-project/setup-pdm@v4
@@ -56,3 +63,9 @@ jobs:
       run: pdm publish
       env:
         PDM_PUBLISH_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+
+    - name: Upload the wheel to the Github release
+      run: |
+        TAG_NAME=$(bump-my-version show current_version)
+        pdm build
+        gh release upload -R ${{ github.repository }} v$TAG_NAME dist/*
