@@ -37,7 +37,7 @@ jobs:
       run: |
         DRAFT_RELEASE=$(gh api repos/${{ github.repository }}/releases -q '[.[] | select(.draft==true)] | first')
         DRAFT_NOTES=$(echo $DRAFT_RELEASE | jq -r '.body')
-        DRAFT_ID=$(echo $DRAFT_RELEASE | jq -r '.id')
+        DRAFT_ID=$(echo $DRAFT_RELEASE | jq -r '.id' | jq -Rs .)
         echo "notes=$DRAFT_NOTES" >> $GITHUB_OUTPUT
         gh api repos/${{ github.repository }}/releases/$DRAFT_ID -X DELETE
 
