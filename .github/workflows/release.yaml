@@ -10,7 +10,6 @@ on:
 
 jobs:
   publish-release:
-    if: contains(github.repository_owner.permissions.admins, github.event.sender.login)
     runs-on: ubuntu-latest
 
     permissions:
