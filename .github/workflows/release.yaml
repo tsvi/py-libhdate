@@ -62,9 +62,9 @@ jobs:
       uses: pdm-project/setup-pdm@v4
 
     - name: Build and publish to pypi
-      run: pdm publish
+      run: pdm publish -r testpypi
       env:
-        PDM_PUBLISH_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        PDM_PUBLISH_PASSWORD: ${{ secrets.TEST_PYPI_PASSWORD }}
 
     - name: Upload the wheel to the Github release
       run: |
