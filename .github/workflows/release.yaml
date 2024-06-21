@@ -38,14 +38,14 @@ jobs:
         DRAFT_RELEASE=$(gh api repos/${{ github.repository }}/releases -q '[.[] | select(.draft==true)] | first')
         DRAFT_NOTES=$(echo $DRAFT_RELEASE | jq -r '.body')
         DRAFT_ID=$(echo $DRAFT_RELEASE | jq -r '.id')
-        echo "::set-output name=notes::$DRAFT_NOTES"
+        echo "notes=$DRAFT_NOTES" >> $GITHUB_OUTPUT
         gh api repos/${{ github.repository }}/releases/$DRAFT_ID -X DELETE
 
     - name: Update Changelog
       uses: stefanzweifel/changelog-updater-action@v1
       with:
-        latest-version: ${{ github.event.release.tag_name }}
-        release-notes: ${{ github.event.release.body }}
+        latest-version: $(bump-my-version show --increment ${{ github.event.inputs.version_bump }} new_version)
+        release-notes: ${{ steps.fetch_release_notes.outputs.notes }}
 
     - name: Bump version
       run: bump-my-version bump ${{ github.event.inputs.version_bump }} -v
