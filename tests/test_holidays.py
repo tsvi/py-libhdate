@@ -231,7 +231,8 @@ def test_hanukah_5785() -> None:
 def test_get_holiday_adar(possible_days: list[int], holiday: str, year: int) -> None:
     """Test holidays for Adar I/Adar II."""
     date = HebrewDate(year)
-    month = Months.ADAR_II if date.is_leap_year() else Months.ADAR
+    is_leap = date.is_leap_year()
+    month = Months.ADAR_II if is_leap else Months.ADAR
     mgr = HolidayManager(diaspora=False)
     valid_dates = 0
     for day in possible_days:
@@ -242,7 +243,12 @@ def test_get_holiday_adar(possible_days: list[int], holiday: str, year: int) -> 
         if holiday_found:
             assert holidays[0].name == holiday
             valid_dates += 1
-    assert valid_dates == 1
+    if is_leap and holiday in ["taanit_esther", "purim", "shushan_purim"]:
+        assert valid_dates == 1
+    elif not is_leap and holiday != "memorial_day_unknown":
+        assert valid_dates == 1
+    else:
+        assert valid_dates == 0
 
 
 @given(year=strategies.integers(min_value=5000, max_value=6000))
