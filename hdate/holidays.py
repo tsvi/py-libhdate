@@ -51,6 +51,7 @@ class HolidayManager:
     _diaspora_holidays: ClassVar[dict[HebrewDate, list[Holiday]]]
     _israel_holidays: ClassVar[dict[HebrewDate, list[Holiday]]]
     _all_holidays: ClassVar[dict[HebrewDate, list[Holiday]]]
+    _rosh_chodesh_holidays: ClassVar[dict[HebrewDate, list[Holiday]]]
 
     def __post_init__(self) -> None:
         self._instance_holidays = deepcopy(self._all_holidays)
@@ -60,8 +61,9 @@ class HolidayManager:
         else:
             for date, holidays in self._israel_holidays.items():
                 self._instance_holidays[date].extend(holidays)
+        for date, holidays in self._rosh_chodesh_holidays.items():
+            self._instance_holidays[date].extend(holidays)
         self._instance_holidays = dict(sorted(self._instance_holidays.items()))
-
     @classmethod
     def register_holidays(cls, holidays: list[Holiday]) -> None:
         """Register a list of holidays with the holiday manager."""
@@ -69,7 +71,7 @@ class HolidayManager:
         cls._diaspora_holidays = defaultdict(list)
         cls._israel_holidays = defaultdict(list)
         cls._all_holidays = defaultdict(list)
-
+        cls._rosh_chodesh_holidays = defaultdict(list)
         def holiday_dates_cross_product(
             holiday: Holiday,
         ) -> product[tuple[int, ...]]:
@@ -89,7 +91,10 @@ class HolidayManager:
                 elif holiday.israel_diaspora == "DIASPORA":
                     cls._diaspora_holidays[index].append(holiday)
                 else:
-                    cls._all_holidays[index].append(holiday)
+                    if holiday.type == HolidayTypes.ROSH_CHODESH:
+                        cls._rosh_chodesh_holidays[index].append(holiday)
+                    else:
+                        cls._all_holidays[index].append(holiday)
 
     def lookup(self, date: HebrewDate) -> list[Holiday]:
         """Lookup the holidays for a given date."""
