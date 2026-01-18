@@ -10,7 +10,7 @@ import logging
 import math
 from dataclasses import dataclass, field
 from functools import cached_property
-from typing import Optional, cast
+from typing import cast
 
 from hdate.hebrew_date import is_shabbat
 from hdate.holidays import is_yom_tov
@@ -87,7 +87,7 @@ class Zmanim(TranslatorMixin):  # pylint: disable=too-many-instance-attributes
         return [*super().__dir__(), *self.zmanim.keys()]
 
     @property
-    def candle_lighting(self) -> Optional[dt.datetime]:
+    def candle_lighting(self) -> dt.datetime | None:
         """Return the time for candle lighting, or None if not applicable."""
         # If today is a Yom Tov or Shabbat, and tomorrow is a Yom Tov or
         # Shabbat return the havdalah time as the candle lighting time.
@@ -111,7 +111,7 @@ class Zmanim(TranslatorMixin):  # pylint: disable=too-many-instance-attributes
         return self.shkia.local + dt.timedelta(minutes=self.havdalah_offset)
 
     @property
-    def havdalah(self) -> Optional[dt.datetime]:
+    def havdalah(self) -> dt.datetime | None:
         """Return the time for havdalah, or None if not applicable.
 
         If havdalah_offset is 0, uses the time for three_stars. Otherwise,
@@ -262,14 +262,11 @@ class Zmanim(TranslatorMixin):  # pylint: disable=too-many-instance-attributes
             int(720.0 - 4.0 * longitude + hour_angle - eqtime),
         )
 
-    def _datetime_to_minutes_offest(self, time: dt.datetime) -> int:
-        """Return the time in minutes from 00:00 (utc) for a given time."""
-        return (
-            time.hour * 60
-            + time.minute
-            + (1 if time.second >= 30 else 0)
-            + int((time.date() - self.date).total_seconds() // 60)
-        )
+    def _datetime_to_minutes_offset(self, time: dt.datetime) -> int:
+        """Return minutes offset from self.date at 00:00."""
+        anchor = dt.datetime.combine(self.date, dt.time.min, tzinfo=time.tzinfo)
+        delta_seconds = (time - anchor).total_seconds()
+        return int(delta_seconds / 60 + 0.5)
 
     def _get_utc_time_of_transit(self, zenith: float, rising: bool) -> int:
         """Return the time in minutes from 00:00 (utc) for a given sun altitude."""
@@ -277,7 +274,7 @@ class Zmanim(TranslatorMixin):  # pylint: disable=too-many-instance-attributes
             latitude=self.location.latitude,
             longitude=self.location.longitude,
         )
-        return self._datetime_to_minutes_offest(
+        return self._datetime_to_minutes_offset(
             astral.sun.time_of_transit(
                 astral_observer,
                 self.date,
