@@ -7,7 +7,7 @@ from typing import cast
 import pytest
 from hypothesis import given, strategies
 
-from hdate import Zmanim
+from hdate import Zmanim, ZmanimConfig, ZmanMethod
 from hdate.location import Location
 
 _ASTRAL = "astral" in sys.modules
@@ -77,15 +77,15 @@ def test_extreme_zmanim(location: Location, result: dt.time) -> None:
 
 # Times are assumed for NYC.
 CANDLES_TEST = [
-    (dt.datetime(2018, 9, 7, 13, 1), 18, dt.datetime(2018, 9, 7, 19, 0), False),
-    (dt.datetime(2018, 9, 7, 19, 4), 18, dt.datetime(2018, 9, 7, 19, 0), True),
+    (dt.datetime(2018, 9, 7, 13, 1), 18, dt.datetime(2018, 9, 7, 19, 3), False),
+    (dt.datetime(2018, 9, 7, 19, 4), 18, dt.datetime(2018, 9, 7, 19, 3), True),
     (dt.datetime(2018, 9, 8, 13, 1), 18, None, True),
     (dt.datetime(2018, 9, 19, 22, 1), 18, None, False),
-    (dt.datetime(2018, 9, 9, 16, 1), 20, dt.datetime(2018, 9, 9, 18, 55), False),
-    (dt.datetime(2018, 9, 9, 19, 30), 18, dt.datetime(2018, 9, 9, 18, 57), True),
+    (dt.datetime(2018, 9, 9, 16, 1), 20, dt.datetime(2018, 9, 9, 18, 57), False),
+    (dt.datetime(2018, 9, 9, 19, 30), 18, dt.datetime(2018, 9, 9, 18, 59), True),
     # Candle lighting matches the time that would be havdalah.
-    (dt.datetime(2018, 9, 10, 8, 1), 18, dt.datetime(2018, 9, 10, 19, 55), True),
-    (dt.datetime(2018, 9, 10, 20, 20), 18, dt.datetime(2018, 9, 10, 19, 55), True),
+    (dt.datetime(2018, 9, 10, 8, 1), 18, dt.datetime(2018, 9, 10, 19, 58), True),
+    (dt.datetime(2018, 9, 10, 20, 20), 18, dt.datetime(2018, 9, 10, 19, 58), True),
 ]
 
 
@@ -102,11 +102,13 @@ def test_candle_lighting(
 ) -> None:
     """Test candle lighting values."""
     # Use a constant offset for Havdalah for unit test stability.
+    config = ZmanimConfig(
+        candle_lighting=ZmanMethod(minutes=offset), tzait_shabbat=ZmanMethod(minutes=42)
+    )
     zmanim = Zmanim(
         date=now.date(),
         location=location,
-        candle_lighting_offset=offset,
-        havdalah_offset=42,
+        config=config,
     )
     actual = zmanim.candle_lighting
     if actual is not None:
@@ -119,12 +121,12 @@ def test_candle_lighting(
 HAVDALAH_TEST = [
     (dt.datetime(2018, 9, 7, 13, 1), 42, None, False),
     (dt.datetime(2018, 9, 7, 20, 1), 42, None, True),
-    (dt.datetime(2018, 9, 8, 13, 1), 42, dt.datetime(2018, 9, 8, 19, 59), True),
-    (dt.datetime(2018, 9, 8, 13, 1), 0, dt.datetime(2018, 9, 8, 19, 58), True),
-    (dt.datetime(2018, 9, 19, 22, 1), 18, dt.datetime(2018, 9, 19, 19, 16), False),
+    (dt.datetime(2018, 9, 8, 13, 1), 42, dt.datetime(2018, 9, 8, 20, 1), True),
+    (dt.datetime(2018, 9, 8, 13, 1), 0, dt.datetime(2018, 9, 8, 19, 19), True),
+    (dt.datetime(2018, 9, 19, 22, 1), 18, dt.datetime(2018, 9, 19, 19, 18), False),
     (dt.datetime(2018, 9, 9, 16, 1), 0, None, False),
     (dt.datetime(2018, 9, 9, 19, 30), 0, None, True),
-    (dt.datetime(2018, 9, 11, 16, 1), 0, dt.datetime(2018, 9, 11, 19, 53), True),
+    (dt.datetime(2018, 9, 11, 16, 1), 0, dt.datetime(2018, 9, 11, 19, 14), True),
     # No havdalah in the middle of Yom Tov.
     (dt.datetime(2018, 9, 10, 8, 1), 0, None, True),
     (dt.datetime(2018, 9, 10, 20, 20), 0, None, True),
@@ -141,7 +143,8 @@ def test_havdalah(
     location: Location,
 ) -> None:
     """Test havdalah times."""
-    zmanim = Zmanim(date=now.date(), location=location, havdalah_offset=offset)
+    config = ZmanimConfig(tzait_shabbat=ZmanMethod(minutes=offset))
+    zmanim = Zmanim(date=now.date(), location=location, config=config)
     actual = zmanim.havdalah
     if actual is not None:
         actual = actual.replace(tzinfo=None)
@@ -174,7 +177,8 @@ def test_motzei_shabbat_chag(
 ) -> None:
     """Test motzei shabbat chag boolean is correct."""
     # Use a constant offset for Havdalah for unit test stability.
-    zmanim = Zmanim(date=now.date(), location=location, havdalah_offset=offset)
+    config = ZmanimConfig(tzait_shabbat=ZmanMethod(minutes=offset))
+    zmanim = Zmanim(date=now.date(), location=location, config=config)
     assert zmanim.motzei_shabbat_chag(now) == motzei_shabbat_chag
 
 
@@ -204,7 +208,8 @@ def test_erev_shabbat_hag(
 ) -> None:
     """Test erev shabbat chag boolean is correct."""
     # Use a constant offset for Havdalah for unit test stability.
-    zmanim = Zmanim(date=now.date(), location=location, havdalah_offset=offset)
+    config = ZmanimConfig(tzait_shabbat=ZmanMethod(minutes=offset))
+    zmanim = Zmanim(date=now.date(), location=location, config=config)
     assert zmanim.erev_shabbat_chag(now) == erev_shabbat_chag
 
 
@@ -212,15 +217,12 @@ def test_erev_shabbat_hag(
 def test_candle_lighting_erev_shabbat_is_yom_tov(location: Location) -> None:
     """Test for candle lighting when erev shabbat is yom tov"""
     day = dt.date(2024, 10, 18)
-    if _ASTRAL:
-        actual_candle_lighting = dt.datetime(
-            2024, 10, 18, 17, 52, 00, tzinfo=cast(dt.tzinfo, location.timezone)
-        )
-    else:
-        actual_candle_lighting = dt.datetime(
-            2024, 10, 18, 17, 55, 00, tzinfo=cast(dt.tzinfo, location.timezone)
-        )
-    zman = Zmanim(date=day, location=location, candle_lighting_offset=18)
+    # Expected: shkia (18:13) - 18 minutes = 17:55
+    actual_candle_lighting = dt.datetime(
+        2024, 10, 18, 17, 55, 00, tzinfo=cast(dt.tzinfo, location.timezone)
+    )
+    config = ZmanimConfig(candle_lighting=ZmanMethod(minutes=18))
+    zman = Zmanim(date=day, location=location, config=config)
     assert zman.candle_lighting == actual_candle_lighting
 
 

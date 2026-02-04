@@ -16,6 +16,12 @@ from hdate.hebrew_date import is_shabbat
 from hdate.holidays import is_yom_tov
 from hdate.location import Location
 from hdate.translator import TranslatorMixin
+from hdate.zmanim_config import (
+    CalculationMethod,
+    ZmanimConfig,
+    ZmanimPresets,
+    ZmanType,
+)
 
 try:
     import astral
@@ -61,12 +67,12 @@ class Zmanim(TranslatorMixin):  # pylint: disable=too-many-instance-attributes
 
     date: dt.date = field(default_factory=dt.date.today)
     location: Location = field(default_factory=Location)
-    candle_lighting_offset: int = 18
-    havdalah_offset: int = 0
+    config: ZmanimConfig = field(default_factory=ZmanimPresets.gra_standard)
 
     def __post_init__(self) -> None:
         if not isinstance(self.date, dt.date):
             raise TypeError("date has to be of type datetime.date")
+
         tomorrow = self.date + dt.timedelta(days=1)
         self._today_is_shabbat = is_shabbat(self.date)
         self._tomorrow_is_shabbat = is_shabbat(tomorrow)
@@ -96,26 +102,24 @@ class Zmanim(TranslatorMixin):  # pylint: disable=too-many-instance-attributes
         ) and self._tomorrow_is_yom_tov:
             return self._havdalah_datetime
 
-        # Otherwise, if today is Friday or erev Yom Tov, return candle
-        # lighting.
+        # Otherwise, if today is Friday or erev Yom Tov, return candle lighting time
         if self._tomorrow_is_shabbat or self._tomorrow_is_yom_tov:
-            return self.shkia.local - dt.timedelta(minutes=self.candle_lighting_offset)
+            candle_minutes: int = int(self.config.candle_lighting.minutes or 0)
+            return self.shkia.local - dt.timedelta(minutes=candle_minutes)
+
         return None
 
     @property
     def _havdalah_datetime(self) -> dt.datetime:
         """Compute the havdalah time based on settings."""
-        if self.havdalah_offset == 0:
-            return self.tset_hakohavim_shabbat.local
-        # Otherwise, use the offset.
-        return self.shkia.local + dt.timedelta(minutes=self.havdalah_offset)
+        # Havdalah is always at tzait_shabbat (end of Shabbat)
+        return self.tset_hakohavim_shabbat.local
 
     @property
     def havdalah(self) -> dt.datetime | None:
         """Return the time for havdalah, or None if not applicable.
 
-        If havdalah_offset is 0, uses the time for three_stars. Otherwise,
-        adds the offset to the time of sunset and uses that.
+        Uses the config.tzait_shabbat time (when Shabbat ends).
         If it's currently a multi-day YomTov, and the end of the stretch is
         after today, the havdalah value is defined to be None (to avoid
         misleading the user that melacha is permitted).
@@ -283,31 +287,55 @@ class Zmanim(TranslatorMixin):  # pylint: disable=too-many-instance-attributes
             )
         )
 
+    def _get_configured_time(self, zman_type: ZmanType) -> int:
+        """Get time in minutes for the specified zman type."""
+        # Get the calculation parameters for this zman type
+        calculation = self.config.get_calculation(zman_type)
+
+        # Create a function that can compute sun times for any zenith angle
+        def get_sun_time(zenith: float, is_rising: bool) -> int:
+            """Get sun time for a given zenith angle."""
+            adjusted_zenith = zenith
+            if (not _USE_ASTRAL) or (abs(self.location.latitude) > MAX_LATITUDE_ASTRAL):
+                if is_rising:
+                    time, _ = self._get_utc_sun_time_deg(adjusted_zenith)
+                    return time
+                _, time = self._get_utc_sun_time_deg(adjusted_zenith)
+                return time
+            return self._get_utc_time_of_transit(adjusted_zenith, is_rising)
+
+        # Delegate to the method to handle degree vs minutes logic
+        return calculation.method(calculation.is_rising, get_sun_time)
+
     @cached_property
     def zmanim(self) -> dict[str, Zman]:
         """Return a list of Jewish times for the given location."""
-        if (not _USE_ASTRAL) or (abs(self.location.latitude) > MAX_LATITUDE_ASTRAL):
-            sunrise, sunset = self._get_utc_sun_time_deg(90.833)
-            first_light, _ = self._get_utc_sun_time_deg(106.1)
-            talit, _ = self._get_utc_sun_time_deg(101.0)
-            _, first_stars = self._get_utc_sun_time_deg(96.45)
-            _, three_stars = self._get_utc_sun_time_deg(98.5)
-        else:
-            sunrise = self._get_utc_time_of_transit(
-                90.0 + astral.sun.SUN_APPARENT_RADIUS, True
-            )
-            sunset = self._get_utc_time_of_transit(
-                90.0 + astral.sun.SUN_APPARENT_RADIUS, False
-            )
-            first_light = self._get_utc_time_of_transit(106.1, True)
-            talit = self._get_utc_time_of_transit(101.0, True)
-            first_stars = self._get_utc_time_of_transit(96.45, False)
-            three_stars = self._get_utc_time_of_transit(98.5, False)
+        # Get fundamental astronomical times based on configuration
+        sunrise = self._get_configured_time(ZmanType.NETZ_HACHAMA)
+        sunset = self._get_configured_time(ZmanType.SHKIA)
 
-        # shaa zmanit by gara, 1/12 of light time
-        sun_hour = (sunset - sunrise) // 12
-        midday = (sunset + sunrise) // 2
-        mga_sunhour = (midday - first_light) / 6
+        # Dawn times
+        first_light = self._get_configured_time(ZmanType.ALOT_HASHACHAR)
+        talit = self._get_configured_time(ZmanType.MISHEYAKIR)
+
+        # Midday - calculated as midpoint between sunrise and sunset
+        midday = (sunrise + sunset) / 2.0
+
+        # Nightfall times
+        tzait_regular = self._get_configured_time(ZmanType.TZAIT_HAKOCHAVIM)
+        tzait_fast = self._get_configured_time(ZmanType.TZAIT_FAST_DAY)
+        tzait_shabbat = self._get_configured_time(ZmanType.TZAIT_SHABBAT)
+
+        # Calculate shaa zmanit based on calculation method
+        # GRA (includes BAAL_HATANYA alias): sunrise to sunset
+        if self.config.calculation_method == CalculationMethod.GRA:
+            # GRA: sunrise to sunset
+            sun_hour = (sunset - sunrise) / 12.0
+            day_start = sunrise
+        else:
+            # MGA: alot to tzait
+            sun_hour = (tzait_regular - first_light) / 12.0
+            day_start = first_light
 
         def make_zman(key: str, time: float) -> Zman:
             timezone = cast(dt.tzinfo, self.location.timezone)
@@ -316,21 +344,19 @@ class Zmanim(TranslatorMixin):  # pylint: disable=too-many-instance-attributes
 
         _zmanim = {
             "alot_hashachar": first_light,
-            "talit_and_tefillin": talit,
+            "misheyakir": talit,
             "netz_hachama": sunrise,
-            "sof_zman_shema_mga": first_light + mga_sunhour * 3.0,
-            "sof_zman_shema_gra": sunrise + sun_hour * 3.0,
-            "sof_zman_tfilla_mga": first_light + mga_sunhour * 4.0,
-            "sof_zman_tfilla_gra": sunrise + sun_hour * 4.0,
+            "sof_zman_shema": day_start + sun_hour * 3.0,
+            "sof_zman_tfilla": day_start + sun_hour * 4.0,
             "chatzot_hayom": midday,
-            "mincha_gedola": sunrise + 6.5 * sun_hour,
+            "mincha_gedola": day_start + 6.5 * sun_hour,
             "mincha_gedola_30min": midday + 30,
-            "mincha_ketana": sunrise + 9.5 * sun_hour,
+            "mincha_ketana": day_start + 9.5 * sun_hour,
             "plag_hamincha": sunset - 1.25 * sun_hour,
             "shkia": sunset,
-            "tset_hakohavim_tsom": first_stars,
-            "tset_hakohavim_shabbat": three_stars,
-            "tset_hakohavim": sunset + 18.0 * sun_hour / 60.0,
+            "tset_hakohavim": tzait_regular,
+            "tset_hakohavim_tsom": tzait_fast,
+            "tset_hakohavim_shabbat": tzait_shabbat,
             "tset_hakohavim_rabeinu_tam": sunset + sun_hour * 1.2,
             "chatzot_halayla": midday + 12 * 60.0,
         }
