@@ -1,0 +1,41 @@
+{
+  "sources": ["hebcal"],
+  "dates": ["2024-03-20", "2024-06-18", "2024-12-18"],
+  "locations": [
+    {
+      "name": "New York, US",
+      "latitude": 40.7128,
+      "longitude": -74.0060,
+      "tzid": "America/New_York",
+      "tolerance_minutes": 3
+    },
+    {
+      "name": "Jerusalem, IL",
+      "latitude": 31.778,
+      "longitude": 35.235,
+      "tzid": "Asia/Jerusalem",
+      "tolerance_minutes": 3
+    },
+    {
+      "name": "London, UK",
+      "latitude": 51.5074,
+      "longitude": -0.1278,
+      "tzid": "Europe/London",
+      "tolerance_minutes": 4
+    },
+    {
+      "name": "Sydney, AU",
+      "latitude": -33.8688,
+      "longitude": 151.2093,
+      "tzid": "Australia/Sydney",
+      "tolerance_minutes": 4
+    },
+    {
+      "name": "Reykjavik, IS",
+      "latitude": 64.1466,
+      "longitude": -21.9426,
+      "tzid": "Atlantic/Reykjavik",
+      "tolerance_minutes": 7
+    }
+  ]
+}
